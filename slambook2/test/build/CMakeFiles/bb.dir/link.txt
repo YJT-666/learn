@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/bb.dir/main.cpp.o -o bb 

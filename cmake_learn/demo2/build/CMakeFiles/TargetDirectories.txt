@@ -1,0 +1,3 @@
+/home/smile/cmake_learn/demo2/build/CMakeFiles/hello-world.dir
+/home/smile/cmake_learn/demo2/build/CMakeFiles/edit_cache.dir
+/home/smile/cmake_learn/demo2/build/CMakeFiles/rebuild_cache.dir

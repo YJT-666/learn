@@ -1,0 +1,3 @@
+/home/smile/learning_opengl/demo4_3/build/CMakeFiles/bb.dir
+/home/smile/learning_opengl/demo4_3/build/CMakeFiles/edit_cache.dir
+/home/smile/learning_opengl/demo4_3/build/CMakeFiles/rebuild_cache.dir

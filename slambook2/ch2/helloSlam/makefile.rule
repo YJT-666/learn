@@ -1,0 +1,120 @@
+# makefile.rule for cpp
+# Set the rules required for each module to compile and links
+
+# if without a platform defined, give value "linux" to PLATFORM 
+ifndef PLATFORM 
+	PLATFORM = linux
+endif
+
+# define a root build directory base on the platform 
+# if without a GLOBAL_BIN_SYMBOAL defined, just use module local src directory 
+ifeq ($(GLOBAL_BIN_SYMBOLS),) 
+    BUILDDIR = $(MOD_SRC_DIR)
+    OBJDIR = $(MOD_SRC_DIR)
+	LIBDIR = $(MOD_SRC_DIR)
+	DMKDIR = $(MOD_SRC_DIR)
+    BINDIR = $(MOD_SRC_DIR)/..
+else
+    ifeq ($(DEBUG_SYMBOLS),TRUE) 
+	    BUILDDIR = $(SRC_BASE)/build/$(PLATFORM)_dbg
+	else
+	    BUILDDIR = $(SRC_BASE)/build/$(PLATFORM)
+	endif
+	OBJDIR = $(BUILDDIR)/obj/$(MODULE)
+	LIBDIR = $(BUILDDIR)/lib
+	DMKDIR = $(BUILDDIR)/dmk
+	BINDIR = $(BUILDDIR)/bin
+endif
+
+# recode mouble LDFLAGS
+$(shell touch $(DMKDIR)/$(MODULE).ldf)
+$(shell echo $(LDFLAGS) > $(DMKDIR)/$(MODULE).ldf)
+
+
+# update compilation flags base on "DEBUG_SYMBOLS" 
+ifeq ($(DEBUG_SYMBOLS), TRUE) 
+    CXXFLAGS += -g  -O0 
+else 
+    CXXFLAGS +=  -O2 
+endif
+
+
+VPATH+=:$(MOD_SRC_DIR) 
+vpath %.cpp $(MOD_SRC_DIR)
+
+SRC_OBJ = $(patsubst %.cpp, $(OBJDIR)/%.o, $(notdir $(SRC_FILES))) 
+SRC_DMK = $(patsubst %.cpp, $(DMKDIR)/%.d, $(notdir $(SRC_FILES)))
+
+# Prevent makefile.rule being called directly
+ifeq ($(MAKELEVEL),0)
+ifeq ($(MODULE_TEST_SYMBOL),)
+all : msg
+else
+all : lib bin
+endif
+else
+all : lib bin
+endif
+
+lib : $(OBJDIR) $(LIBDIR)/$(SRC_LIB) 
+bin : $(OBJDIR) $(BINDIR)/$(SRC_BIN) 
+
+$(OBJDIR) : 
+	@echo "   MKDIR $(notdir $@)..." 
+	@mkdir -p $@
+
+ifneq ($(SRC_BIN),) 
+$(BINDIR)/$(SRC_BIN) : $(SRC_OBJ) 
+	@echo "   LINK $(notdir $@)..." 
+	$(CXX) -o $@ $^ $(LDFLAGS) 
+endif 
+
+ifneq ($(SRC_LIB),) 
+$(LIBDIR)/$(SRC_LIB) : $(SRC_OBJ) 
+	@echo "    ARCHIVE $(notdir $@)..." 
+	$(AR) rcs $@ $^ 
+	@echo "    COPY $@ to $(SRC_BASE)/libs"
+	cp $@ $(SRC_BASE)/lib/$(notdir $@)
+endif
+
+$(SRC_OBJ) : $(SRC_DMK)
+
+# auto generate .d according to .cpp
+$(SRC_DMK) : $(DMKDIR)/%.d : %.cpp
+	@echo " auto generate $@ according to $< ... "
+	@set -e; rm -f $(@); \
+	$(CXX) -MM $(CPPFLAGS) $(<) > $(@).$$$$; \
+	sed 's,\($*\)\.o[ :]*,\$(OBJDIR)\/\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+include $(SRC_DMK)
+
+$(OBJDIR)/%.o : %.cpp
+	@echo "    COMPILE $(notdir $<)..."
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+
+
+msg: 
+	@echo"You cannot directily execute this Makefile! \
+	This Makefile should calledby toplevel Makefile." 
+
+# clean target
+clean: 
+ifneq ($(SRC_LIB),) 
+	$(RM) $(SRC_OBJ) $(LIBDIR)/$(SRC_LIB) $(SRC_DMK) $(DMKDIR)/$(MODULE).ldf
+endif
+ifneq ($(SRC_BIN),) 
+	$(RM) $(SRC_OBJ) $(BINDIR)/$(SRC_BIN) $(SRC_DMK) $(DMKDIR)/$(MODULE).ldf
+endif
+
+	
+distclean:
+ifneq ($(SRC_LIB),) 
+	$(RM) $(SRC_OBJ) $(LIBDIR)/$(SRC_LIB) $(SRC_DMK)
+endif
+ifneq ($(SRC_BIN),) 
+	$(RM) $(SRC_OBJ) $(BINDIR)/$(SRC_BIN) $(SRC_DMK)
+endif
+
+.PHONY : all clean disclean msg

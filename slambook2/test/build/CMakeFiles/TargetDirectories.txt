@@ -1,0 +1,3 @@
+/home/smile/slambook2/test/build/CMakeFiles/bb.dir
+/home/smile/slambook2/test/build/CMakeFiles/edit_cache.dir
+/home/smile/slambook2/test/build/CMakeFiles/rebuild_cache.dir
